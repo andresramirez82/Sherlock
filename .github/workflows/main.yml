@@ -1,0 +1,42 @@
+name: Construir App Flet
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build en ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Instalar dependencias Linux
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-0 libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav
+
+    - name: Instalar dependencias Python
+      run: |
+        pip install flet pyinstaller
+        # Si tienes requirements.txt descomenta la siguiente línea:
+        # pip install -r requirements.txt
+
+    - name: Compilar con PyInstaller
+      run: |
+        # CAMBIA 'main.py' por el nombre de tu archivo si es distinto
+        pyinstaller --name "MiAppFlet" --onefile --windowed main.py
+
+    - name: Subir Ejecutable
+      uses: actions/upload-artifact@v4
+      with:
+        name: App-para-${{ matrix.os }}
+        path: dist/
