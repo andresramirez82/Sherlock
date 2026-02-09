@@ -27,13 +27,11 @@ jobs:
     - name: Instalar dependencias Python
       run: |
         pip install flet pyinstaller
-        # Si tienes requirements.txt descomenta la siguiente línea:
-        # pip install -r requirements.txt
 
     - name: Compilar con PyInstaller
       run: |
-        # CAMBIA 'main.py' por el nombre de tu archivo si es distinto
-        pyinstaller --name "MiAppFlet" --onefile --windowed main.py
+        # AQUI ESTA EL CAMBIO: Ahora apunta a app.py
+        pyinstaller --name "MiAppFlet" --onefile --windowed app.py
 
     - name: Subir Ejecutable
       uses: actions/upload-artifact@v4
