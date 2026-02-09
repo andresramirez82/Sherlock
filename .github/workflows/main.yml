@@ -30,7 +30,7 @@ jobs:
 
     - name: Compilar con PyInstaller
       run: |
-        # AQUI ESTA EL CAMBIO: Ahora apunta a app.py
+        # AQUI ESTA EL CAMBIO: Ahora apunta a app.py v
         pyinstaller --name "MiAppFlet" --onefile --windowed app.py
 
     - name: Subir Ejecutable
