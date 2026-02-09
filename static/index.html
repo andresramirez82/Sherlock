@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sherlock OSINT - User Search</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Professional OSINT tool to find usernames across social networks.">
+</head>
+<body>
+    <div class="background-bg"></div>
+    
+    <div class="container">
+        <header>
+            <div class="logo">
+                <span class="logo-icon">🕵️‍♂️</span>
+                <h1>SHERLOCK</h1>
+            </div>
+            <p class="subtitle">Search for usernames across hundreds of social networks</p>
+        </header>
+
+        <main>
+            <div class="search-section">
+                <div class="input-glass">
+                    <input type="text" id="username-input" placeholder="Enter username..." autocomplete="off">
+                    <button id="search-btn">
+                        <span class="btn-text">SEARCH</span>
+                        <div class="loader-dots" id="main-loader" style="display: none;">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div id="status-bar" class="status-bar" style="display: none;">
+                <span id="status-text">Ready to scan</span>
+                <div class="progress-bar">
+                    <div id="progress-fill"></div>
+                </div>
+                <span id="results-count">0 found</span>
+            </div>
+
+            <div class="results-container" id="results">
+                <!-- Results will appear here -->
+            </div>
+        </main>
+    </div>
+
+    <template id="result-template">
+        <div class="result-card">
+            <div class="result-header">
+                <span class="site-name"></span>
+                <span class="status-badge">CLAIMED</span>
+            </div>
+            <a href="#" class="result-link" target="_blank"></a>
+            <span class="query-time"></span>
+        </div>
+    </template>
+
+    <script src="script.js"></script>
+</body>
+</html>

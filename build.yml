@@ -1,0 +1,51 @@
+name: Construir App Flet
+# Este evento permite ejecutarlo manualmente desde la pestaña Actions
+on: 
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build en ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # Aquí definimos los 3 sistemas operativos
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+    # 1. Descargar el código del repositorio
+    - uses: actions/checkout@v4
+
+    # 2. Instalar Python
+    - name: Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11' # Versión estable recomendada
+
+    # 3. (Solo Linux) Instalar dependencias del sistema necesarias para Flet
+    - name: Instalar dependencias Linux
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-0 libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav
+
+    # 4. Instalar librerías de Python
+    - name: Instalar dependencias Python
+      run: |
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    # 5. Generar el ejecutable
+    - name: Compilar con PyInstaller
+      run: |
+        # Cambia 'main.py' por el nombre de tu archivo si es diferente
+        # --windowed: oculta la consola negra
+        # --onefile: crea un solo archivo ejecutable
+        pyinstaller --name "MiAppFlet" --onefile --windowed main.py
+
+    # 6. Subir los archivos generados para que los puedas descargar
+    - name: Subir Ejecutable
+      uses: actions/upload-artifact@v4
+      with:
+        name: App-para-${{ matrix.os }}
+        path: dist/
