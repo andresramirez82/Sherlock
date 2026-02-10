@@ -26,11 +26,13 @@ jobs:
 
     - name: Instalar dependencias Python
       run: |
-        pip install flet pyinstaller
+        # AQUI ESTA LA CORRECCION: Instalamos todas tus librerías
+        pip install flet pyinstaller fastapi uvicorn requests requests-futures pandas colorama
 
     - name: Compilar con PyInstaller
       run: |
-        # AQUI ESTA EL CAMBIO: Ahora apunta a app.py v
+        # --onefile: Todo en un solo archivo
+        # --windowed: Sin consola negra (si tu app tiene interfaz gráfica)
         pyinstaller --name "MiAppFlet" --onefile --windowed app.py
 
     - name: Subir Ejecutable
