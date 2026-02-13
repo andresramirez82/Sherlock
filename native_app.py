@@ -1,20 +1,21 @@
 import flet as ft
 import sys
 import os
-import asyncio
 import threading
-from typing import List
+import json
 
-# Add the directory containing 'sherlock_project' to sys.path
+# Configuración de rutas para importar sherlock_project
 current_dir = os.path.dirname(os.path.abspath(__file__))
 package_root = os.path.dirname(current_dir)
 parent_of_package = os.path.dirname(package_root)
 sys.path.append(parent_of_package)
 
-from sherlock_project.sherlock import sherlock
-from sherlock_project.sites import SitesInformation
-from sherlock_project.notify import QueryNotify
-from sherlock_project.result import QueryStatus
+try:
+    from sherlock_project.sherlock import sherlock
+    from sherlock_project.notify import QueryNotify
+    from sherlock_project.result import QueryStatus
+except ImportError:
+    print("Error: No se pudo encontrar el paquete 'sherlock_project'. Asegúrate de que la ruta sea correcta.")
 
 class FletNotify(QueryNotify):
     def __init__(self, page: ft.Page, on_result):
@@ -26,8 +27,8 @@ class FletNotify(QueryNotify):
         pass
 
     def update(self, result):
+        # Solo notificamos si el usuario fue encontrado (CLAIMED)
         if result.status == QueryStatus.CLAIMED:
-            # We call this via page.run_task or similar to be thread-safe
             self.on_result(result)
 
     def finish(self, message=None):
@@ -40,8 +41,9 @@ def main(page: ft.Page):
     page.window_height = 800
     page.padding = 30
     page.bgcolor = "#0c0d10"
+
+    # --- UI COMPONENTS ---
     
-    # Header
     header = ft.Column(
         [
             ft.Row(
@@ -62,10 +64,9 @@ def main(page: ft.Page):
         spacing=0,
     )
 
-    results_list = ft.ListView(expand=1, spacing=10, padding=20)
+    results_list = ft.ListView(expand=True, spacing=10, padding=20)
     found_count_text = ft.Text("0 found", color="green", weight="bold")
     progress_ring = ft.ProgressRing(width=16, height=16, stroke_width=2, visible=False)
-    
     status_text = ft.Text("Ready", color="#00f2ff")
     
     status_bar = ft.Container(
@@ -84,6 +85,8 @@ def main(page: ft.Page):
         visible=False
     )
 
+    # --- LOGIC ---
+
     def on_result(result):
         results_list.controls.insert(0, ft.Container(
             content=ft.Column([
@@ -91,26 +94,28 @@ def main(page: ft.Page):
                     ft.Text(result.site_name, weight="bold", size=16),
                     ft.Container(
                         content=ft.Text("CLAIMED", size=10, color="green"),
-                        border=ft.border.all(1, "green"),
-                        padding=ft.padding.all(5),
+                        border=ft.Border.all(1, "green"),
+                        padding=5,
                         border_radius=5
                     )
                 ], alignment="spaceBetween"),
                 ft.TextButton(
-                    text=result.site_url_user,
-                    url=result.site_url_user,
-                    style=ft.ButtonStyle(color="#a0a4b8")
+                    content=ft.Text(result.site_url_user, color="#a0a4b8"),
+                    url=result.site_url_user
                 )
             ]),
             bgcolor="#191b22",
             padding=15,
             border_radius=15,
-            border=ft.border.all(1, "rgba(255, 255, 255, 0.1)")
+            border=ft.Border.all(1, "rgba(255, 255, 255, 0.1)")
         ))
         
-        # Update count
-        count = int(found_count_text.value.split()[0]) + 1
-        found_count_text.value = f"{count} found"
+        # Actualizar contador
+        try:
+            count = int(found_count_text.value.split()[0]) + 1
+            found_count_text.value = f"{count} found"
+        except:
+            pass
         page.update()
 
     def search_click(e):
@@ -128,14 +133,21 @@ def main(page: ft.Page):
         search_btn.disabled = True
         page.update()
 
-        # Load sites
-        data_path = os.path.join(package_root, "resources", "data.json")
-        sites = SitesInformation(data_path)
-        
+        # Load sites data
+        data_path = os.path.join(current_dir, "resources", "data.json")
+        try:
+            with open(data_path, "r", encoding="utf-8") as f:
+                site_data = json.load(f)
+            site_data.pop("$schema", None)
+        except Exception as err:
+            status_text.value = f"Error loading data: {err}"
+            page.update()
+            return
+
         notify = FletNotify(page, on_result)
 
         def run_scan():
-            sherlock(username, sites.sites, notify)
+            sherlock(username, site_data, notify)
             # Finalize UI
             progress_ring.visible = False
             status_text.value = "Scan complete"
@@ -144,6 +156,8 @@ def main(page: ft.Page):
             page.update()
 
         threading.Thread(target=run_scan, daemon=True).start()
+
+    # --- INPUTS ---
 
     username_input = ft.TextField(
         hint_text="Enter username...",
@@ -155,26 +169,68 @@ def main(page: ft.Page):
         height=60,
     )
 
-    search_btn = ft.ElevatedButton(
-        content=ft.Text("SEARCH", color="black", weight="bold"),
-        on_click=search_click,
-        style=ft.ButtonStyle(
-            bgcolor="#00f2ff",
-            shape=ft.RoundedRectangleBorder(radius=10),
-            padding=ft.padding.symmetric(horizontal=30, vertical=15),
-        ),
-        height=60,
+    search_btn = ft.Container(
+        content=ft.ElevatedButton(
+            content=ft.Text("SEARCH", color="black", weight="bold"),
+            on_click=search_click,
+            style=ft.ButtonStyle(
+                bgcolor="#00f2ff",
+                shape=ft.RoundedRectangleBorder(radius=10),
+            ),
+            height=60,
+        )
     )
 
-    page.add(
-        header,
-        ft.Divider(height=20, color="transparent"),
-        ft.Row([username_input, search_btn], spacing=10),
-        ft.Divider(height=20, color="transparent"),
-        status_bar,
-        ft.Divider(height=10, color="transparent"),
-        results_list
+    # --- FOOTER (CORREGIDO) ---
+
+    footer = ft.Column(
+        [
+            ft.Row(
+                [
+                    ft.Text("©️", size=40),
+                    ft.Text("Andrés Nicolás Ramirez", weight="bold"),
+                    ft.Text("📧", size=40),
+                    ft.Text("andresramirez82@gmail.com", size=12, color="#a0a4b8"),
+                ],
+                alignment="center",
+            ),
+            ft.Row(
+                ft.Column(
+                    
+                    ft.TextButton(
+                        content=ft.Text("GitHub", color="#a0a4b8"),
+                        url="https://github.com/andresramirez82",
+                    ),
+                    width=100,
+                    height=50,
+                ),
+               alignment="center",
+            ),
+            
+        ],
+        alignment="center",
+        spacing=0,
     )
+
+
+    # --- MAIN LAYOUT ---
+    
+    # Usamos una Column con expand=True para que el ListView respete los límites
+    main_content = ft.Column(
+        [
+            header,
+            ft.Divider(height=20, color="transparent"),
+            ft.Row([username_input, search_btn], spacing=10),
+            ft.Divider(height=20, color="transparent"),
+            status_bar,
+            ft.Divider(height=10, color="transparent"),
+            results_list,
+            footer,
+        ],
+        expand=True,
+    )
+
+    page.add(main_content)
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    ft.run(main)

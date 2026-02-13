@@ -58,7 +58,11 @@ async def scan(username: str):
     notify = QueueNotify(queue)
     
     # Load sites
-    sites = SitesInformation(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "resources", "data.json"))
+    # sites = SitesInformation(...) # Avoid object usage as sherlock expects dicts
+    data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "data.json")
+    with open(data_path, "r", encoding="utf-8") as f:
+        site_data = json.load(f)
+    site_data.pop("$schema", None)
     
     async def run_sherlock():
         # Sherlock is thread-based, so we run it in a thread
